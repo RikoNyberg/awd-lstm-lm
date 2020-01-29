@@ -4,6 +4,7 @@ import math
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.utils.tensorboard import SummaryWriter
 
 import data
 import model
@@ -13,6 +14,8 @@ from utils import batchify, get_batch, repackage_hidden
 parser = argparse.ArgumentParser(description='PyTorch PennTreeBank RNN/LSTM Language Model')
 parser.add_argument('--data', type=str, default='data/penn/',
                     help='location of the data corpus')
+parser.add_argument('--output_dir', type=str, default='data/penn/',
+                    help='location of tensorboard data (and serialized data and model)')
 parser.add_argument('--model', type=str, default='LSTM',
                     help='type of recurrent net (LSTM, QRNN, GRU)')
 parser.add_argument('--emsize', type=int, default=400,
@@ -202,6 +205,8 @@ def train():
         # Temporal Activation Regularization (slowness)
         if args.beta: loss = loss + sum(args.beta * (rnn_h[1:] - rnn_h[:-1]).pow(2).mean() for rnn_h in rnn_hs[-1:])
         loss.backward()
+        STEP += 1
+        writer.add_scalar('Loss/train-batch', raw_loss.data, STEP)
 
         # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
         if args.clip: torch.nn.utils.clip_grad_norm_(params, args.clip)
@@ -216,6 +221,8 @@ def train():
                     'loss {:5.2f} | ppl {:8.2f} | bpc {:8.3f}'.format(
                 epoch, batch, len(train_data) // args.bptt, optimizer.param_groups[0]['lr'],
                 elapsed * 1000 / args.log_interval, cur_loss, math.exp(cur_loss), cur_loss / math.log(2)))
+            writer.add_scalar('Loss/train', cur_loss, STEP)
+            writer.add_scalar('BPC/train', curr_loss / math.log(2), STEP)
             total_loss = 0
             start_time = time.time()
         ###
@@ -229,6 +236,8 @@ stored_loss = 100000000
 
 # At any point you can hit Ctrl + C to break out of training early.
 try:
+    STEP = 0
+    writer = SummaryWriter(f'{args.output_dir}/summary')
     optimizer = None
     # Ensure the optimizer is optimizing params, which includes both the model's weights as well as the criterion's weight (i.e. Adaptive Softmax)
     if args.optimizer == 'sgd':
@@ -250,6 +259,8 @@ try:
                 'valid ppl {:8.2f} | valid bpc {:8.3f}'.format(
                     epoch, (time.time() - epoch_start_time), val_loss2, math.exp(val_loss2), val_loss2 / math.log(2)))
             print('-' * 89)
+            writer.add_scalar('Loss/dev', val_loss2, STEP)
+            writer.add_scalar('BPC/dev', val_loss2 / math.log(2), STEP)
 
             if val_loss2 < stored_loss:
                 model_save(args.save)
@@ -266,6 +277,8 @@ try:
                 'valid ppl {:8.2f} | valid bpc {:8.3f}'.format(
               epoch, (time.time() - epoch_start_time), val_loss, math.exp(val_loss), val_loss / math.log(2)))
             print('-' * 89)
+            writer.add_scalar('Loss/dev', val_loss, STEP)
+            writer.add_scalar('BPC/dev', val_loss / math.log(2), STEP)
 
             if val_loss < stored_loss:
                 model_save(args.save)
