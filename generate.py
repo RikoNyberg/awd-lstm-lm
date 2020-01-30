@@ -47,7 +47,12 @@ if args.temperature < 1e-3:
     parser.error("--temperature has to be greater or equal 1e-3")
 
 with open(args.checkpoint, 'rb') as f:
-    model = torch.load(f)
+    if args.cuda:
+        model = torch.load(f)
+    else:
+        model = torch.load(f, map_location='cpu')
+
+model = model[0]
 model.eval()
 if args.model == 'QRNN':
     model.reset()
