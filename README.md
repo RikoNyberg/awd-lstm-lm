@@ -1,3 +1,15 @@
+# Language Model Toolkit 
+This toolkit is buld to ease out the research and development of language models with easier tools to modify the models and to have experiment logging. This Toolkit is build on top of [LSTM and QRNN Language Model Toolkit](https://github.com/salesforce/awd-lstm-lm) with some updates and improvements. The Experiment Logging of the machine learning models has been done with [Sacred](https://github.com/IDSIA/sacred) and the recommended tool for tracking these experiments is [OmniBoard](https://github.com/vivekratnavel/omniboard).
+
+## [Sacred](https://github.com/IDSIA/sacred)
+> Every experiment is sacred  
+> Every experiment is great  
+> If an experiment is wasted  
+> God gets quite irate  
+### Set up
+- I strongly suggest to set up the Sacred Experiment Logging to save the experiment details to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas). It is free (for this amount of data), easy to set up and makes it convenient to train models in multiple different machines while having all the experiment results in one place.
+
+
 # LSTM and QRNN Language Model Toolkit
 
 This repository contains the code used for two [Salesforce Research](https://einstein.ai/) papers:

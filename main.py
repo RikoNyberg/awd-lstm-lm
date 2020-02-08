@@ -8,7 +8,8 @@ from torch.utils.tensorboard import SummaryWriter
 from utils import batchify, get_batch, repackage_hidden
 
 class LanguageModelTrainer():
-    def __init__(self, args):
+    def __init__(self, args, ex):
+        self.ex = ex
         self.args = args
         # Set the random seed manually for reproducibility.
         np.random.seed(self.args.seed)
@@ -132,6 +133,7 @@ class LanguageModelTrainer():
                 loss.backward()
                 STEP += 1
                 writer.add_scalar('Loss/train-batch', raw_loss.data, STEP)
+                self.ex.log_scalar('Loss/train-batch', raw_loss.data, STEP)
 
                 # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
                 if self.args.clip: torch.nn.utils.clip_grad_norm_(self.params, self.args.clip)
@@ -148,6 +150,8 @@ class LanguageModelTrainer():
                         elapsed * 1000 / self.args.log_interval, cur_loss, math.exp(cur_loss), cur_loss / math.log(2)))
                     writer.add_scalar('Loss/train', cur_loss, STEP)
                     writer.add_scalar('BPC/train', cur_loss / math.log(2), STEP)
+                    self.ex.log_scalar('Loss/train', cur_loss, STEP)
+                    self.ex.log_scalar('BPC/train', cur_loss / math.log(2), STEP)
                     total_loss = 0
                     start_time = time.time()
                 ###
@@ -185,6 +189,8 @@ class LanguageModelTrainer():
                     print('-' * 89)
                     writer.add_scalar('Loss/dev', val_loss2, STEP)
                     writer.add_scalar('BPC/dev', val_loss2 / math.log(2), STEP)
+                    self.ex.log_scalar('Loss/dev', val_loss2, STEP)
+                    self.ex.log_scalar('BPC/dev', val_loss2 / math.log(2), STEP)
 
                     if val_loss2 < stored_loss:
                         self.model_save(self.args.save)
@@ -203,6 +209,8 @@ class LanguageModelTrainer():
                     print('-' * 89)
                     writer.add_scalar('Loss/dev', val_loss, STEP)
                     writer.add_scalar('BPC/dev', val_loss / math.log(2), STEP)
+                    self.ex.log_scalar('Loss/dev', val_loss, STEP)
+                    self.ex.log_scalar('BPC/dev', val_loss / math.log(2), STEP)
 
                     if val_loss < stored_loss:
                         self.model_save(self.args.save)
