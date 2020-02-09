@@ -6,7 +6,6 @@ def parse_input():
 
     parser = argparse.ArgumentParser(description='PyTorch PennTreeBank RNN/LSTM Language Model')
     parser.add_argument('--data', type=str, default='data/penn/', help='location of the data corpus')
-    parser.add_argument('--output_dir', type=str, default='data/penn/', help='location of tensorboard data (and serialized data and model)')
     parser.add_argument('--mongo_url', type=str, default='', help='MongoDB url to save the experiment parameters and results')
     parser.add_argument('--model', type=str, default='LSTM', help='type of recurrent net (LSTM, QRNN, GRU)')
     parser.add_argument('--emsize', type=int, default=400, help='size of word embeddings')

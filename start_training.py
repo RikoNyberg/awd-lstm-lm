@@ -21,7 +21,6 @@ ex.captured_out_filter = apply_backspaces_and_linefeeds
 def default_config():
     cuda = None         # action='store_false' - use CUDA 
     data = None         # str - location of the data corpus
-    output_dir = None   # str - location of tensorboard data (and serialized data and model)
     model = None        # str - type of recurrent net (LSTM, QRNN, GRU)
     emsize = None       # int - size of word embeddings
     nhid = None         # int - number of hidden units per layer
@@ -58,7 +57,6 @@ def run(
     args_dict = {
         'cuda': cuda,
         'data': data,
-        'output_dir': output_dir,
         'model': model,
         'emsize': emsize,
         'nhid': nhid,
