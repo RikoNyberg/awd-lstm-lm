@@ -58,6 +58,7 @@ def run(
     args_dict = {
         'cuda': cuda,
         'data': data,
+        'output_dir': output_dir,
         'model': model,
         'emsize': emsize,
         'nhid': nhid,

@@ -98,7 +98,7 @@ class LanguageModelTrainer():
     # Training code
     ###############################################################################
     def train(self):
-        def train():
+        def train(STEP):
             # Turn on training mode which enables dropout.
             if self.args.model == 'QRNN': self.model.reset()
             total_loss = 0
@@ -174,7 +174,7 @@ class LanguageModelTrainer():
                 self.optimizer = torch.optim.Adam(self.params, lr=self.args.lr, weight_decay=self.args.wdecay)
             for epoch in range(1, self.args.epochs+1):
                 epoch_start_time = time.time()
-                train()
+                train(STEP)
                 if 't0' in self.optimizer.param_groups[0]:
                     tmp = {}
                     for prm in self.model.parameters():

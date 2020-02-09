@@ -14,7 +14,7 @@ def parse_input():
     parser.add_argument('--nlayers', type=int, default=3, help='number of layers')
     parser.add_argument('--lr', type=float, default=30, help='initial learning rate')
     parser.add_argument('--clip', type=float, default=0.25, help='gradient clipping')
-    parser.add_argument('--epochs', type=int, default=8000, help='upper epoch limit')
+    parser.add_argument('--epochs', type=int, default=10, help='upper epoch limit')
     parser.add_argument('--batch_size', type=int, default=80, metavar='N', help='batch size')
     parser.add_argument('--bptt', type=int, default=70, help='sequence length')
     parser.add_argument('--dropout', type=float, default=0.4, help='dropout applied to layers (0 = no dropout)')
