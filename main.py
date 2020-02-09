@@ -3,7 +3,6 @@ import math
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.tensorboard import SummaryWriter
 
 from utils import batchify, get_batch, repackage_hidden
 
@@ -98,7 +97,7 @@ class LanguageModelTrainer():
     # Training code
     ###############################################################################
     def train(self):
-        def train(STEP):
+        def train():
             # Turn on training mode which enables dropout.
             if self.args.model == 'QRNN': self.model.reset()
             total_loss = 0
@@ -131,9 +130,6 @@ class LanguageModelTrainer():
                 # Temporal Activation Regularization (slowness)
                 if self.args.beta: loss = loss + sum(self.args.beta * (rnn_h[1:] - rnn_h[:-1]).pow(2).mean() for rnn_h in rnn_hs[-1:])
                 loss.backward()
-                STEP += 1
-                writer.add_scalar('Loss/train-batch', raw_loss.data, STEP)
-                self.ex.log_scalar('Loss/train-batch', raw_loss.data, STEP)
 
                 # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
                 if self.args.clip: torch.nn.utils.clip_grad_norm_(self.params, self.args.clip)
@@ -148,10 +144,6 @@ class LanguageModelTrainer():
                             'loss {:5.2f} | ppl {:8.2f} | bpc {:8.3f}'.format(
                         epoch, batch, len(self.train_data) // self.args.bptt, self.optimizer.param_groups[0]['lr'],
                         elapsed * 1000 / self.args.log_interval, cur_loss, math.exp(cur_loss), cur_loss / math.log(2)))
-                    writer.add_scalar('Loss/train', cur_loss, STEP)
-                    writer.add_scalar('BPC/train', cur_loss / math.log(2), STEP)
-                    self.ex.log_scalar('Loss/train', cur_loss, STEP)
-                    self.ex.log_scalar('BPC/train', cur_loss / math.log(2), STEP)
                     total_loss = 0
                     start_time = time.time()
                 ###
@@ -164,8 +156,6 @@ class LanguageModelTrainer():
 
         # At any point you can hit Ctrl + C to break out of training early.
         try:
-            STEP = 0
-            writer = SummaryWriter(f'{self.args.output_dir}/summary')
             self.optimizer = None
             # Ensure the optimizer is optimizing params, which includes both the model's weights as well as the criterion's weight (i.e. Adaptive Softmax)
             if self.args.optimizer == 'sgd':
@@ -174,7 +164,7 @@ class LanguageModelTrainer():
                 self.optimizer = torch.optim.Adam(self.params, lr=self.args.lr, weight_decay=self.args.wdecay)
             for epoch in range(1, self.args.epochs+1):
                 epoch_start_time = time.time()
-                train(STEP)
+                train()
                 if 't0' in self.optimizer.param_groups[0]:
                     tmp = {}
                     for prm in self.model.parameters():
@@ -182,15 +172,15 @@ class LanguageModelTrainer():
                         prm.data = self.optimizer.state[prm]['ax'].clone()
 
                     val_loss2 = self.evaluate(self.val_data)
+                    bpc2 = val_loss2 / math.log(2)
+                    bpc2 = np.float64(bpc2).item()
                     print('-' * 89)
                     print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
                         'valid ppl {:8.2f} | valid bpc {:8.3f}'.format(
-                            epoch, (time.time() - epoch_start_time), val_loss2, math.exp(val_loss2), val_loss2 / math.log(2)))
+                            epoch, (time.time() - epoch_start_time), val_loss2, math.exp(val_loss2), bpc2))
                     print('-' * 89)
-                    writer.add_scalar('Loss/dev', val_loss2, STEP)
-                    writer.add_scalar('BPC/dev', val_loss2 / math.log(2), STEP)
-                    self.ex.log_scalar('Loss/dev', val_loss2, STEP)
-                    self.ex.log_scalar('BPC/dev', val_loss2 / math.log(2), STEP)
+                    self.ex.log_scalar('Loss/dev', val_loss2, epoch)
+                    self.ex.log_scalar('BPC/dev', bpc2, epoch)
 
                     if val_loss2 < stored_loss:
                         self.model_save(self.args.save)
@@ -202,15 +192,15 @@ class LanguageModelTrainer():
 
                 else:
                     val_loss = self.evaluate(self.val_data, self.eval_batch_size)
+                    bpc = val_loss / math.log(2)
+                    bpc = np.float64(bpc).item()
                     print('-' * 89)
                     print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
                         'valid ppl {:8.2f} | valid bpc {:8.3f}'.format(
-                    epoch, (time.time() - epoch_start_time), val_loss, math.exp(val_loss), val_loss / math.log(2)))
+                    epoch, (time.time() - epoch_start_time), val_loss, math.exp(val_loss), bpc))
                     print('-' * 89)
-                    writer.add_scalar('Loss/dev', val_loss, STEP)
-                    writer.add_scalar('BPC/dev', val_loss / math.log(2), STEP)
-                    self.ex.log_scalar('Loss/dev', val_loss, STEP)
-                    self.ex.log_scalar('BPC/dev', val_loss / math.log(2), STEP)
+                    self.ex.log_scalar('Loss/dev', val_loss, epoch)
+                    self.ex.log_scalar('BPC/dev', bpc, epoch)
 
                     if val_loss < stored_loss:
                         self.model_save(self.args.save)
