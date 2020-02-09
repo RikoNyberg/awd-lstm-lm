@@ -49,8 +49,8 @@ def default_config():
 
 @ex.main
 def run(
-    cuda, data, output_dir, model, emsize, nhid, nlayers, lr, clip, epochs, batch_size, bptt, 
-    dropout, dropouth, dropouti, dropoute, wdrop, seed, nonmono, log_interval, 
+    cuda, data, model, emsize, nhid, nlayers, lr, clip, epochs, batch_size, bptt,
+    dropout, dropouth, dropouti, dropoute, wdrop, seed, nonmono, log_interval,
     save, alpha, beta, wdecay, resume, optimizer, when, tied
     ):
     
