@@ -179,6 +179,7 @@ class LanguageModelTrainer():
                         'valid ppl {:8.2f} | valid bpc {:8.3f}'.format(
                             epoch, (time.time() - epoch_start_time), val_loss2, math.exp(val_loss2), bpc2))
                     print('-' * 89)
+                    self.ex.log_scalar('ppl/dev', math.exp(val_loss2), epoch)
                     self.ex.log_scalar('Loss/dev', val_loss2, epoch)
                     self.ex.log_scalar('BPC/dev', bpc2, epoch)
 
@@ -198,6 +199,7 @@ class LanguageModelTrainer():
                         'valid ppl {:8.2f} | valid bpc {:8.3f}'.format(
                     epoch, (time.time() - epoch_start_time), val_loss, math.exp(val_loss), bpc))
                     print('-' * 89)
+                    self.ex.log_scalar('ppl/dev', math.exp(val_loss), epoch)
                     self.ex.log_scalar('Loss/dev', val_loss, epoch)
                     self.ex.log_scalar('BPC/dev', bpc, epoch)
 
