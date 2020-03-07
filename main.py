@@ -216,7 +216,7 @@ class LanguageModelTrainer():
                         print('Saving model before learning rate decreased')
                         self.model_save('{}.e{}'.format(self.args.save, epoch))
                         print('Dividing learning rate by 10')
-                        self.optimizer.param_groups[0]['lr'] /= 10.
+                        self.optimizer.param_groups[0]['lr'] /= 1.2
 
                     best_val_loss.append(val_loss)
 
