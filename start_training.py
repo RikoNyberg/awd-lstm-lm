@@ -19,7 +19,7 @@ ex.captured_out_filter = apply_backspaces_and_linefeeds
 
 @ex.config
 def default_config():
-    cuda = None         # action='store_false' - use CUDA 
+    cuda = None         # action='store_true' - use CUDA
     data = None         # str - location of the data corpus
     model = None        # str - type of recurrent net (LSTM, QRNN, GRU)
     emsize = None       # int - size of word embeddings

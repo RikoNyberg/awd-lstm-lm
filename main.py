@@ -18,6 +18,8 @@ class LanguageModelTrainer():
                 print("WARNING: You have a CUDA device, so you should probably run with --cuda")
             else:
                 torch.cuda.manual_seed(self.args.seed)
+        elif self.args.cuda:
+            print("WARNING: No CUDA device available, so you should not run with --cuda")
 
     ###############################################################################
     # Load data
