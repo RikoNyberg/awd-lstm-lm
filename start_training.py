@@ -44,14 +44,15 @@ def default_config():
     wdecay = None       # float - weight decay applied to all weights
     resume = None       # str - path of model to resume
     optimizer = None    # str - optimizer to use (sgd, adam)
-    when = None         # int - When (which epochs) to divide the learning rate by 10 - accepts multiple
+    lr_div = None
+    when_lr_div = None
     tied = None
 
 @ex.main
 def run(
     cuda, data, model, emsize, nhid, nlayers, lr, clip, epochs, batch_size, bptt,
     dropout, dropouth, dropouti, dropoute, wdrop, seed, nonmono, log_interval,
-    save, alpha, beta, wdecay, resume, optimizer, when, tied
+    save, alpha, beta, wdecay, resume, optimizer, lr_div, when_lr_div, tied
     ):
     
     args_dict = {
@@ -80,7 +81,8 @@ def run(
         'wdecay': wdecay,
         'resume': resume,
         'optimizer': optimizer,
-        'when': when,
+        'lr_div': lr_div,
+        'when_lr_div': when_lr_div,
         'tied': tied,
     }
     args = Namespace(**args_dict)

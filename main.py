@@ -18,8 +18,11 @@ class LanguageModelTrainer():
                 print("WARNING: You have a CUDA device, so you should probably run with --cuda")
             else:
                 torch.cuda.manual_seed(self.args.seed)
+                print("INFO: Using CUDA device")
         elif self.args.cuda:
             print("WARNING: No CUDA device available, so you should not run with --cuda")
+        else:
+            print("INFO: No CUDA device available")
 
     ###############################################################################
     # Load data
@@ -214,11 +217,11 @@ class LanguageModelTrainer():
                         print('Switching to ASGD')
                         self.optimizer = torch.optim.ASGD(self.model.parameters(), lr=self.args.lr, t0=0, lambd=0., weight_decay=self.args.wdecay)
 
-                    if epoch in self.args.when:
+                    if epoch in self.args.when_lr_div:
                         print('Saving model before learning rate decreased')
                         self.model_save('{}.e{}'.format(self.args.save, epoch))
-                        print('Dividing learning rate by 10')
-                        self.optimizer.param_groups[0]['lr'] /= 1.2
+                        print('Dividing learning rate by {lr_div}'.format(lr_div=self.args.lr_div))
+                        self.optimizer.param_groups[0]['lr'] /= self.args.lr_div
 
                     best_val_loss.append(val_loss)
 
