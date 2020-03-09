@@ -19,31 +19,31 @@ ex.captured_out_filter = apply_backspaces_and_linefeeds
 
 @ex.config
 def default_config():
-    cuda = None         # action='store_true' - use CUDA
-    data = None         # str - location of the data corpus
-    model = None        # str - type of recurrent net (LSTM, QRNN, GRU)
-    emsize = None       # int - size of word embeddings
-    nhid = None         # int - number of hidden units per layer
-    nlayers = None      # int - number of layers
-    lr = None           # float - initial learning rate
-    clip = None         # float - gradient clipping
-    epochs = None       # int - upper epoch limit
-    batch_size = None   # int - batch size - metavar='N',
-    bptt = None         # int - sequence length
-    dropout = None      # float - dropout applied to layers (0 = no dropout)
-    dropouth = None     # float - dropout for rnn layers (0 = no dropout)
-    dropouti = None     # float - dropout for input embedding layers (0 = no dropout)
-    dropoute = None     # float - dropout to remove words from embedding layer (0 = no dropout)
-    wdrop = None        # float - amount of weight dropout to apply to the RNN hidden to hidden matrix
-    seed = None         # int - random seed
-    nonmono = None      # int - random seed
-    log_interval = None # int - report interval - metavar='N',
-    save = None         # str - path to save the final model
-    alpha = None        # float - alpha L2 regularization on RNN activation (alpha = 0 means no regularization)
-    beta = None         # float - beta slowness regularization applied on RNN activiation (beta = 0 means no regularization)
-    wdecay = None       # float - weight decay applied to all weights
-    resume = None       # str - path of model to resume
-    optimizer = None    # str - optimizer to use (sgd, adam)
+    cuda = None
+    data = None
+    model = None
+    emsize = None
+    nhid = None
+    nlayers = None
+    lr = None
+    clip = None
+    epochs = None
+    batch_size = None
+    bptt = None
+    dropout = None
+    dropouth = None
+    dropouti = None
+    dropoute = None
+    wdrop = None
+    seed = None
+    nonmono = None
+    log_interval = None
+    save = None
+    alpha = None
+    beta = None
+    wdecay = None
+    resume = None
+    optimizer = None
     lr_div = None
     when_lr_div = None
     tied = None
