@@ -8,6 +8,7 @@ def parse_input():
     parser.add_argument('--data', type=str, default='data/penn/', help='location of the data corpus')
     parser.add_argument('--mongo_url', type=str, default='', help='MongoDB url to save the experiment parameters and results')
     parser.add_argument('--model', type=str, default='LSTM', help='type of recurrent net (LSTM, QRNN, GRU)')
+    parser.add_argument('--word_embedding', action='store_true', help='Use word embeddings (default is one-hot encoding)')
     parser.add_argument('--emsize', type=int, default=400, help='size of word embeddings')
     parser.add_argument('--nhid', type=int, default=1150, help='number of hidden units per layer')
     parser.add_argument('--nlayers', type=int, default=3, help='number of layers')
@@ -33,6 +34,7 @@ def parse_input():
     parser.add_argument('--optimizer', type=str,  default='sgd', help='optimizer to use (sgd, adam)')
     parser.add_argument('--lr_div', type=int, default=10, help='How much to divide the learning rate on every when_lr_div epoch')
     parser.add_argument('--when_lr_div', nargs="+", type=int, default=[-1], help='When (which epochs) to divide the learning rate by lr_div - accepts multiple')
+    parser.add_argument('--tied', action='store_true', help='Are the weights tied (default is False)')
     args = parser.parse_args()
 
     args_dict = vars(args)

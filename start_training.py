@@ -22,6 +22,7 @@ def default_config():
     cuda = None
     data = None
     model = None
+    word_embedding = None
     emsize = None
     nhid = None
     nlayers = None
@@ -50,7 +51,7 @@ def default_config():
 
 @ex.main
 def run(
-    cuda, data, model, emsize, nhid, nlayers, lr, clip, epochs, batch_size, bptt,
+    cuda, data, model, word_embedding, emsize, nhid, nlayers, lr, clip, epochs, batch_size, bptt,
     dropout, dropouth, dropouti, dropoute, wdrop, seed, nonmono, log_interval,
     save, alpha, beta, wdecay, resume, optimizer, lr_div, when_lr_div, tied
     ):
@@ -59,6 +60,7 @@ def run(
         'cuda': cuda,
         'data': data,
         'model': model,
+        'word_embedding': word_embedding,
         'emsize': emsize,
         'nhid': nhid,
         'nlayers': nlayers,
@@ -86,7 +88,6 @@ def run(
         'tied': tied,
     }
     args = Namespace(**args_dict)
-    args.tied = True
 
     lm_model_trainer = LanguageModelTrainer(args, ex)
     lm_model_trainer.load_training_data()
