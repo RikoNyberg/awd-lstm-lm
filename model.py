@@ -18,6 +18,11 @@ class RNNModel(nn.Module):
         self.word_embedding = word_embedding
         if self.word_embedding:
             self.encoder = nn.Embedding(self.ntoken, ninp)
+        else: # one-hot encoding
+            if self.ntoken != ninp:
+                print(f"WARNING: You are using one-hot encoding and set emsize,\n \
+                    so you should probably run with --word_embedding or update --emsize to {self.ntoken}")
+                ninp = self.ntoken
 
         assert rnn_type in ['LSTM', 'QRNN', 'GRU'], 'RNN type is not supported'
         if rnn_type == 'LSTM':
@@ -45,10 +50,14 @@ class RNNModel(nn.Module):
         if self.word_embedding:
             self.decoder = nn.Linear(nhid, self.ntoken)
             if tie_weights:
-                #if nhid != ninp:
-                #    raise ValueError('When using the tied flag, nhid must be equal to emsize')
+                if nhid != ninp:
+                   raise ValueError('When using the tied flag, nhid must be equal to emsize')
                 self.decoder.weight = self.encoder.weight
             self.init_weights()
+        else: # one-hot encoding
+            self.decoder.weight = torch.ones([self.ntoken, 1])
+            self.decoder.bias = torch.zeros([1, self.ntoken])
+
 
         self.rnn_type = rnn_type
         self.ninp = ninp
