@@ -32,7 +32,7 @@ def parse_input():
     parser.add_argument('--wdecay', type=float, default=1.2e-6, help='weight decay applied to all weights')
     parser.add_argument('--resume', type=str,  default='', help='path of model to resume')
     parser.add_argument('--optimizer', type=str,  default='sgd', help='optimizer to use (sgd, adam)')
-    parser.add_argument('--lr_div', type=int, default=10, help='How much to divide the learning rate on every when_lr_div epoch')
+    parser.add_argument('--lr_div', type=float, default=10, help='How much to divide the learning rate on every when_lr_div epoch')
     parser.add_argument('--when_lr_div', nargs="+", type=int, default=[-1], help='When (which epochs) to divide the learning rate by lr_div - accepts multiple')
     parser.add_argument('--tied', action='store_true', help='Are the weights tied (default is False)')
     args = parser.parse_args()
