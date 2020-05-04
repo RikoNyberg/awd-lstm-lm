@@ -155,15 +155,15 @@ class LanguageModelTrainer():
                 batch += 1
                 i += seq_len
 
-                train_loss = self.evaluate(self.train_data, self.args.batch_size)
-                bpc = train_loss / math.log(2)
-                print('-' * 30, 'Training data', '-' * 30)
-                print('| end of epoch {:3d} | {:5d}/{:5d} batches | train loss {:5.2f} | '
-                    'train ppl {:8.2f} | train bpc {:8.3f}'.format(
-                epoch, batch, len(self.train_data) // self.args.bptt, train_loss, math.exp(train_loss), bpc))
-                self.ex.log_scalar('ppl/train', math.exp(train_loss), epoch)
-                self.ex.log_scalar('Loss/train', train_loss, epoch)
-                self.ex.log_scalar('BPC/train', bpc, epoch)
+            train_loss = self.evaluate(self.train_data, self.args.batch_size)
+            bpc = train_loss / math.log(2)
+            print('-' * 30, 'Training data', '-' * 30)
+            print('| end of epoch {:3d} | {:5d}/{:5d} batches | train loss {:5.2f} | '
+                'train ppl {:8.2f} | train bpc {:8.3f}'.format(
+            epoch, batch, len(self.train_data) // self.args.bptt, train_loss, math.exp(train_loss), bpc))
+            self.ex.log_scalar('ppl/train', math.exp(train_loss), epoch)
+            self.ex.log_scalar('Loss/train', train_loss, epoch)
+            self.ex.log_scalar('BPC/train', bpc, epoch)
 
 
         # Loop over epochs.
