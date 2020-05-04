@@ -148,7 +148,7 @@ class LanguageModelTrainer():
                     print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:05.5f} | ms/batch {:5.2f} | '
                             'loss {:5.2f} | ppl {:8.2f} | bpc {:8.3f}'.format(
                         epoch, batch, len(self.train_data) // self.args.bptt, self.optimizer.param_groups[0]['lr'],
-                        elapsed * 1000 / self.args.log_interval, cur_loss, math.exp(cur_loss), cur_loss / math.log(2)))
+                        elapsed * 1000 / self.args.log_interval, cur_loss, math.exp(cur_loss / self.args.bptt), cur_loss / math.log(2)))
                     total_loss = 0
                     start_time = time.time()
                 ###
@@ -160,8 +160,8 @@ class LanguageModelTrainer():
             print('-' * 30, 'Training data', '-' * 30)
             print('| end of epoch {:3d} | {:5d}/{:5d} batches | train loss {:5.2f} | '
                 'train ppl {:8.2f} | train bpc {:8.3f}'.format(
-            epoch, batch, len(self.train_data) // self.args.bptt, train_loss, math.exp(train_loss), bpc))
-            self.ex.log_scalar('ppl/train', math.exp(train_loss), epoch)
+            epoch, batch, len(self.train_data) // self.args.bptt, train_loss, math.exp(train_loss / self.args.bptt), bpc))
+            self.ex.log_scalar('ppl/train', math.exp(train_loss / self.args.bptt), epoch)
             self.ex.log_scalar('Loss/train', train_loss, epoch)
             self.ex.log_scalar('BPC/train', bpc, epoch)
 
@@ -193,11 +193,11 @@ class LanguageModelTrainer():
                     print('-' * 89)
                     print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
                         'valid ppl {:8.2f} | valid bpc {:8.3f}'.format(
-                            epoch, (time.time() - epoch_start_time), val_loss2, math.exp(val_loss2), bpc2))
+                            epoch, (time.time() - epoch_start_time), val_loss2, math.exp(val_loss2 / self.args.bptt), bpc2))
                     print('-' * 89)
-                    self.ex.log_scalar('ppl/dev', math.exp(val_loss2), epoch)
-                    self.ex.log_scalar('Loss/dev', val_loss2, epoch)
-                    self.ex.log_scalar('BPC/dev', bpc2, epoch)
+                    self.ex.log_scalar('ppl/val', math.exp(val_loss2 / self.args.bptt), epoch)
+                    self.ex.log_scalar('Loss/val', val_loss2, epoch)
+                    self.ex.log_scalar('BPC/val', bpc2, epoch)
 
                     if val_loss2 < stored_loss:
                         self.model_save(self.args.save)
@@ -213,11 +213,11 @@ class LanguageModelTrainer():
                     print('-' * 30, 'Validation data', '-' * 30)
                     print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
                         'valid ppl {:8.2f} | valid bpc {:8.3f}'.format(
-                    epoch, (time.time() - epoch_start_time), val_loss, math.exp(val_loss), bpc))
+                    epoch, (time.time() - epoch_start_time), val_loss, math.exp(val_loss / self.args.bptt), bpc))
                     print('-' * 89)
-                    self.ex.log_scalar('ppl/dev', math.exp(val_loss), epoch)
-                    self.ex.log_scalar('Loss/dev', val_loss, epoch)
-                    self.ex.log_scalar('BPC/dev', bpc, epoch)
+                    self.ex.log_scalar('ppl/val', math.exp(val_loss / self.args.bptt), epoch)
+                    self.ex.log_scalar('Loss/val', val_loss, epoch)
+                    self.ex.log_scalar('BPC/val', bpc, epoch)
 
                     if val_loss < stored_loss:
                         self.model_save(self.args.save)
@@ -265,6 +265,6 @@ class LanguageModelTrainer():
         test_loss = self.evaluate(self.test_data, self.test_batch_size)
         print('=' * 89)
         print('| End of training | test loss {:5.2f} | test ppl {:8.2f} | test bpc {:8.3f}'.format(
-            test_loss, math.exp(test_loss), test_loss / math.log(2)))
+            test_loss, math.exp(test_loss / self.args.bptt), test_loss / math.log(2)))
         print('=' * 89)
 
