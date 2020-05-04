@@ -217,11 +217,16 @@ class LanguageModelTrainer():
                         print('Switching to ASGD')
                         self.optimizer = torch.optim.ASGD(self.model.parameters(), lr=self.args.lr, t0=0, lambd=0., weight_decay=self.args.wdecay)
 
-                    if epoch in self.args.when_lr_div:
-                        print('Saving model before learning rate decreased')
-                        self.model_save('{}.e{}'.format(self.args.save, epoch))
-                        print('Dividing learning rate by {lr_div}'.format(lr_div=self.args.lr_div))
-                        self.optimizer.param_groups[0]['lr'] /= self.args.lr_div
+                    # learning rate decay
+                    if self.args.lr_decay != 1:
+                        decay = self.args.lr_decay ** max(epoch - self.args.lr_decay_start, 0.0)
+                        if decay != 1:
+                            print('Saving model before learning rate decreased')
+                            self.model_save('{}.e{}'.format(self.args.save, epoch))
+                            print('Multiplying original learning rate by {decay}'.format(decay=decay))
+                            learning_rate = self.args.lr * decay
+                            print('New learning rate: {0}'.format(learning_rate))
+                            self.optimizer.param_groups[0]['lr'] = learning_rate
 
                     best_val_loss.append(val_loss)
 

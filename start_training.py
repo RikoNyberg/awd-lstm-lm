@@ -44,15 +44,15 @@ def default_config():
     wdecay = None
     resume = None
     optimizer = None
-    lr_div = None
-    when_lr_div = None
+    lr_decay = None
+    lr_decay_start = None
     tied = None
 
 @ex.main
 def run(
     cuda, data, model, emsize, nhid, nlayers, lr, clip, epochs, batch_size, bptt,
     dropout, dropouth, dropouti, dropoute, wdrop, seed, nonmono, log_interval,
-    save, alpha, beta, wdecay, resume, optimizer, lr_div, when_lr_div, tied
+    save, alpha, beta, wdecay, resume, optimizer, lr_decay, lr_decay_start, tied
     ):
     
     args_dict = {
@@ -81,8 +81,8 @@ def run(
         'wdecay': wdecay,
         'resume': resume,
         'optimizer': optimizer,
-        'lr_div': lr_div,
-        'when_lr_div': when_lr_div,
+        'lr_decay': lr_decay,
+        'lr_decay_start': lr_decay_start,
         'tied': tied,
     }
     args = Namespace(**args_dict)
