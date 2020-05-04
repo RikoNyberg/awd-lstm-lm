@@ -155,6 +155,17 @@ class LanguageModelTrainer():
                 batch += 1
                 i += seq_len
 
+                train_loss = self.evaluate(self.train_data, self.args.batch_size)
+                bpc = train_loss / math.log(2)
+                print('-' * 30, 'Training data', '-' * 30)
+                print('| end of epoch {:3d} | {:5d}/{:5d} batches | train loss {:5.2f} | '
+                    'train ppl {:8.2f} | train bpc {:8.3f}'.format(
+                epoch, batch, len(self.train_data) // self.args.bptt, train_loss, math.exp(train_loss), bpc))
+                self.ex.log_scalar('ppl/train', math.exp(train_loss), epoch)
+                self.ex.log_scalar('Loss/train', train_loss, epoch)
+                self.ex.log_scalar('BPC/train', bpc, epoch)
+
+
         # Loop over epochs.
         best_val_loss = []
         stored_loss = 100000000
@@ -199,7 +210,7 @@ class LanguageModelTrainer():
                 else:
                     val_loss = self.evaluate(self.val_data, self.eval_batch_size)
                     bpc = val_loss / math.log(2)
-                    print('-' * 89)
+                    print('-' * 30, 'Validation data', '-' * 30)
                     print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
                         'valid ppl {:8.2f} | valid bpc {:8.3f}'.format(
                     epoch, (time.time() - epoch_start_time), val_loss, math.exp(val_loss), bpc))
@@ -221,9 +232,8 @@ class LanguageModelTrainer():
                     if self.args.lr_decay != 1:
                         decay = self.args.lr_decay ** max(epoch - self.args.lr_decay_start, 0.0)
                         if decay != 1:
-                            print('Saving model before learning rate decreased')
-                            self.model_save('{}.e{}'.format(self.args.save, epoch))
-                            print('Multiplying original learning rate by {decay}'.format(decay=decay))
+                            # print('Saving model before learning rate decreased')
+                            # self.model_save('{}.e{}'.format(self.args.save, epoch))
                             learning_rate = self.args.lr * decay
                             print('New learning rate: {0}'.format(learning_rate))
                             self.optimizer.param_groups[0]['lr'] = learning_rate
