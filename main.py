@@ -230,7 +230,7 @@ class LanguageModelTrainer():
 
                     # learning rate decay
                     if self.args.lr_decay != 1:
-                        decay = self.args.lr_decay ** max(epoch - self.args.lr_decay_start, 0.0)
+                        decay = self.args.lr_decay ** max(epoch + 1 - self.args.lr_decay_start, 0.0)
                         if decay != 1:
                             # print('Saving model before learning rate decreased')
                             # self.model_save('{}.e{}'.format(self.args.save, epoch))
