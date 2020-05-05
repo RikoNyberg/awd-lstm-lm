@@ -76,6 +76,19 @@ class LanguageModelTrainer():
                     if type(rnn) == WeightDrop: rnn.dropout = self.args.wdrop
                     elif rnn.zoneout > 0: rnn.zoneout = self.args.wdrop
         ###
+        if not self.criterion:
+            splits = []
+            if ntokens > 500000:
+                # One Billion
+                # This produces fairly even matrix mults for the buckets:
+                # 0: 11723136, 1: 10854630, 2: 11270961, 3: 11219422
+                splits = [4200, 35000, 180000]
+            elif ntokens > 75000:
+                # WikiText-103
+                splits = [2800, 20000, 76000]
+            print('Using', splits)
+            self.criterion = SplitCrossEntropyLoss(self.args.emsize, splits=splits, verbose=False)
+        ###
         if self.args.cuda:
             self.model = self.model.cuda()
             self.criterion = self.criterion.cuda()
