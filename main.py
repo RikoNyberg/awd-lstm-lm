@@ -76,19 +76,6 @@ class LanguageModelTrainer():
                     if type(rnn) == WeightDrop: rnn.dropout = self.args.wdrop
                     elif rnn.zoneout > 0: rnn.zoneout = self.args.wdrop
         ###
-        if not self.criterion:
-            splits = []
-            if ntokens > 500000:
-                # One Billion
-                # This produces fairly even matrix mults for the buckets:
-                # 0: 11723136, 1: 10854630, 2: 11270961, 3: 11219422
-                splits = [4200, 35000, 180000]
-            elif ntokens > 75000:
-                # WikiText-103
-                splits = [2800, 20000, 76000]
-            print('Using', splits)
-            self.criterion = SplitCrossEntropyLoss(self.args.emsize, splits=splits, verbose=False)
-        ###
         if self.args.cuda:
             self.model = self.model.cuda()
             self.criterion = self.criterion.cuda()
@@ -102,70 +89,6 @@ class LanguageModelTrainer():
     # Training code
     ###############################################################################
     def train(self):
-        def train():
-            # Turn on training mode which enables dropout.
-            if self.args.model == 'QRNN': self.model.reset()
-            total_loss = 0
-            start_time = time.time()
-            hidden = self.model.init_hidden(self.args.batch_size)
-            batch, i = 0, 0
-            while i < self.train_data.size(0) - 1 - 1:
-                bptt = self.args.bptt if np.random.random() < 0.95 else self.args.bptt / 2.
-                # Prevent excessively small or negative sequence lengths
-                seq_len = max(5, int(np.random.normal(bptt, 5)))
-                # There's a very small chance that it could select a very long sequence length resulting in OOM
-                # seq_len = min(seq_len, self.args.bptt + 10)
-
-                lr2 = self.optimizer.param_groups[0]['lr']
-                self.optimizer.param_groups[0]['lr'] = lr2 * seq_len / self.args.bptt
-                self.model.train()
-                data, targets = get_batch(self.train_data, i, self.args, seq_len=seq_len)
-
-                # Starting each batch, we detach the hidden state from how it was previously produced.
-                # If we didn't, the model would try backpropagating all the way to start of the dataset.
-                hidden = repackage_hidden(hidden)
-                self.optimizer.zero_grad()
-
-                output, hidden, rnn_hs, dropped_rnn_hs = self.model(data, hidden, return_h=True)
-                raw_loss = self.criterion(self.model.decoder.weight, self.model.decoder.bias, output, targets)
-
-                loss = raw_loss
-                # Activiation Regularization
-                if self.args.alpha: loss = loss + sum(self.args.alpha * dropped_rnn_h.pow(2).mean() for dropped_rnn_h in dropped_rnn_hs[-1:])
-                # Temporal Activation Regularization (slowness)
-                if self.args.beta: loss = loss + sum(self.args.beta * (rnn_h[1:] - rnn_h[:-1]).pow(2).mean() for rnn_h in rnn_hs[-1:])
-                loss.backward()
-
-                # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
-                if self.args.clip: torch.nn.utils.clip_grad_norm_(self.params, self.args.clip)
-                self.optimizer.step()
-
-                total_loss += raw_loss.data
-                self.optimizer.param_groups[0]['lr'] = lr2
-                if batch % self.args.log_interval == 0 and batch > 0:
-                    cur_loss = total_loss.item() / self.args.log_interval
-                    elapsed = time.time() - start_time
-                    print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:05.5f} | ms/batch {:5.2f} | '
-                            'loss {:5.2f} | ppl {:8.2f} | bpc {:8.3f}'.format(
-                        epoch, batch, len(self.train_data) // self.args.bptt, self.optimizer.param_groups[0]['lr'],
-                        elapsed * 1000 / self.args.log_interval, cur_loss, math.exp(cur_loss), cur_loss / math.log(2)))
-                    total_loss = 0
-                    start_time = time.time()
-                ###
-                batch += 1
-                i += seq_len
-
-            train_loss = self.evaluate(self.train_data, self.args.batch_size)
-            bpc = train_loss / math.log(2)
-            print('-' * 30, 'Training data', '-' * 30)
-            print('| end of epoch {:3d} | {:5d}/{:5d} batches | train loss {:5.2f} | '
-                'train ppl {:8.2f} | train bpc {:8.3f}'.format(
-            epoch, batch, len(self.train_data) // self.args.bptt, train_loss, math.exp(train_loss), bpc))
-            self.ex.log_scalar('ppl/train', math.exp(train_loss), epoch)
-            self.ex.log_scalar('Loss/train', train_loss, epoch)
-            self.ex.log_scalar('BPC/train', bpc, epoch)
-
-
         # Loop over epochs.
         best_val_loss = []
         stored_loss = 100000000
@@ -179,70 +102,93 @@ class LanguageModelTrainer():
             if self.args.optimizer == 'adam':
                 self.optimizer = torch.optim.Adam(self.params, lr=self.args.lr, weight_decay=self.args.wdecay)
             for epoch in range(1, self.args.epochs+1):
-                epoch_start_time = time.time()
-                train()
-                if 't0' in self.optimizer.param_groups[0]:
-                    tmp = {}
-                    for prm in self.model.parameters():
-                        tmp[prm] = prm.data.clone()
-                        prm.data = self.optimizer.state[prm]['ax'].clone()
+                self.epoch_start_time = time.time()
+                self.train_batches()
 
-                    val_loss2 = self.evaluate(self.val_data)
-                    bpc2 = val_loss2 / math.log(2)
-                    bpc2 = np.float64(0).item()
-                    print('-' * 89)
-                    print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
-                        'valid ppl {:8.2f} | valid bpc {:8.3f}'.format(
-                            epoch, (time.time() - epoch_start_time), val_loss2, math.exp(val_loss2), bpc2))
-                    print('-' * 89)
-                    self.ex.log_scalar('ppl/val', math.exp(val_loss2), epoch)
-                    self.ex.log_scalar('Loss/val', val_loss2, epoch)
-                    self.ex.log_scalar('BPC/val', bpc2, epoch)
+                val_loss = self.evaluate(self.val_data, self.eval_batch_size)
+                self.log_and_store_loss_and_ppl(epoch, val_loss, 'valid')
 
-                    if val_loss2 < stored_loss:
-                        self.model_save(self.args.save)
-                        print('Saving Averaged!')
-                        stored_loss = val_loss2
+                if val_loss < stored_loss:
+                    self.model_save(self.args.save)
+                    print('Saving model (new best validation)')
+                    stored_loss = val_loss
 
-                    for prm in self.model.parameters():
-                        prm.data = tmp[prm].clone()
+                # learning rate decay
+                if self.args.lr_decay != 1:
+                    decay = self.args.lr_decay ** max(epoch + 1 - self.args.lr_decay_start, 0.0)
+                    if decay != 1:
+                        # print('Saving model before learning rate decreased')
+                        # self.model_save('{}.e{}'.format(self.args.save, epoch))
+                        learning_rate = self.args.lr * decay
+                        print('New learning rate: {0}'.format(learning_rate))
+                        self.optimizer.param_groups[0]['lr'] = learning_rate
 
-                else:
-                    val_loss = self.evaluate(self.val_data, self.eval_batch_size)
-                    bpc = val_loss / math.log(2)
-                    print('-' * 30, 'Validation data', '-' * 30)
-                    print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
-                        'valid ppl {:8.2f} | valid bpc {:8.3f}'.format(
-                    epoch, (time.time() - epoch_start_time), val_loss, math.exp(val_loss), bpc))
-                    print('-' * 89)
-                    self.ex.log_scalar('ppl/val', math.exp(val_loss), epoch)
-                    self.ex.log_scalar('Loss/val', val_loss, epoch)
-                    self.ex.log_scalar('BPC/val', bpc, epoch)
-
-                    if val_loss < stored_loss:
-                        self.model_save(self.args.save)
-                        print('Saving model (new best validation)')
-                        stored_loss = val_loss
-
-                    if self.args.optimizer == 'sgd' and 't0' not in self.optimizer.param_groups[0] and (len(best_val_loss)>self.args.nonmono and val_loss > min(best_val_loss[:-self.args.nonmono])):
-                        print('Switching to ASGD')
-                        self.optimizer = torch.optim.ASGD(self.model.parameters(), lr=self.args.lr, t0=0, lambd=0., weight_decay=self.args.wdecay)
-
-                    # learning rate decay
-                    if self.args.lr_decay != 1:
-                        decay = self.args.lr_decay ** max(epoch + 1 - self.args.lr_decay_start, 0.0)
-                        if decay != 1:
-                            # print('Saving model before learning rate decreased')
-                            # self.model_save('{}.e{}'.format(self.args.save, epoch))
-                            learning_rate = self.args.lr * decay
-                            print('New learning rate: {0}'.format(learning_rate))
-                            self.optimizer.param_groups[0]['lr'] = learning_rate
-
-                    best_val_loss.append(val_loss)
+                best_val_loss.append(val_loss)
 
         except KeyboardInterrupt:
             print('-' * 89)
             print('Exiting from training early')
+
+    def train_batches(self):
+        # Turn on training mode which enables dropout.
+        if self.args.model == 'QRNN': self.model.reset()
+        total_loss = 0
+        start_time = time.time()
+        hidden = self.model.init_hidden(self.args.batch_size)
+        batch, i = 0, 0
+        while i < self.train_data.size(0) - 1 - 1:
+            self.model.train()
+            data, targets = get_batch(self.train_data, i, self.args, seq_len=self.args.bptt)
+
+            # Starting each batch, we detach the hidden state from how it was previously produced.
+            # If we didn't, the model would try backpropagating all the way to start of the dataset.
+            hidden = repackage_hidden(hidden)
+            self.optimizer.zero_grad()
+
+            output, hidden, rnn_hs, dropped_rnn_hs = self.model(data, hidden, return_h=True)
+            raw_loss = self.criterion(self.model.decoder.weight, self.model.decoder.bias, output, targets)
+
+            loss = raw_loss
+            # Activiation Regularization
+            if self.args.alpha: loss = loss + sum(self.args.alpha * dropped_rnn_h.pow(2).mean() for dropped_rnn_h in dropped_rnn_hs[-1:])
+            # Temporal Activation Regularization (slowness)
+            if self.args.beta: loss = loss + sum(self.args.beta * (rnn_h[1:] - rnn_h[:-1]).pow(2).mean() for rnn_h in rnn_hs[-1:])
+            loss.backward()
+
+            # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
+            if self.args.clip: torch.nn.utils.clip_grad_norm_(self.params, self.args.clip)
+            self.optimizer.step()
+
+            total_loss += raw_loss.data
+            if batch % self.args.log_interval == 0 and batch > 0:
+                cur_loss = total_loss.item() / self.args.log_interval
+                elapsed = time.time() - start_time
+                print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:05.5f} | ms/batch {:5.2f} | '
+                        'loss {:5.2f} | ppl {:8.2f} | bpc {:8.3f}'.format(
+                    epoch, batch, len(self.train_data) // self.args.bptt, self.optimizer.param_groups[0]['lr'],
+                    elapsed * 1000 / self.args.log_interval, cur_loss, math.exp(cur_loss), cur_loss / math.log(2)))
+                total_loss = 0
+                start_time = time.time()
+            ###
+            batch += 1
+            i += self.args.bptt
+
+        train_loss = self.evaluate(self.train_data, self.args.batch_size)
+        print('Final batches {:5d}/{:5d}'.format(batch, len(self.train_data) // self.args.bptt))
+        self.log_and_store_loss_and_ppl(epoch, train_loss, 'train')
+
+    def log_and_store_loss_and_ppl(self, epoch, loss, data_name):
+        bpc = loss / math.log(2)
+        ppl = math.exp(loss)
+        epoch_time = time.time() - self.epoch_start_time
+        print('-' * 30, f'{data_name} data', '-' * 30)
+        print('| end of epoch {:3d} | epoch time: {:5.2f}s | valid loss {:5.2f} | '
+            'valid ppl {:8.2f} | valid bpc {:8.3f}'.format(
+                epoch, epoch_time, loss, ppl, bpc))
+        print('-' * 89)
+        self.ex.log_scalar(f'ppl/{data_name}', ppl, epoch)
+        self.ex.log_scalar(f'Loss/{data_name}', loss, epoch)
+        self.ex.log_scalar(f'BPC/{data_name}', bpc, epoch)
 
     def evaluate(self, data_source, batch_size=10):
         # Turn on evaluation mode which disables dropout.
