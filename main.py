@@ -63,7 +63,7 @@ class LanguageModelTrainer():
         self.criterion = None
 
         ntokens = len(self.corpus.dictionary)
-        self.model = model.RNNModel(self.args.model, ntokens, self.args.emsize, self.args.nhid, self.args.nlayers, self.args.dropout, self.args.dropouth, self.args.dropouti, self.args.dropoute, self.args.wdrop, self.args.tied)
+        self.model = model.RNNModel(self.args.model, ntokens, self.args.emsize, self.args.nhid, self.args.nlayers, self.args.dropout, self.args.dropouth, self.args.dropouti, self.args.dropoute, self.args.wdrop, self.args.tied, self.args.init_scale)
         ###
         if self.args.resume:
             print('Resuming model ...')

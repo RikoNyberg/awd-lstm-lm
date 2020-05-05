@@ -46,13 +46,14 @@ def default_config():
     optimizer = None
     lr_decay = None
     lr_decay_start = None
+    init_scale = None
     tied = None
 
 @ex.main
 def run(
     cuda, data, model, emsize, nhid, nlayers, lr, clip, epochs, batch_size, bptt,
     dropout, dropouth, dropouti, dropoute, wdrop, seed, nonmono, log_interval,
-    save, alpha, beta, wdecay, resume, optimizer, lr_decay, lr_decay_start, tied
+    save, alpha, beta, wdecay, resume, optimizer, lr_decay, lr_decay_start, init_scale, tied
     ):
     
     args_dict = {
@@ -83,6 +84,7 @@ def run(
         'optimizer': optimizer,
         'lr_decay': lr_decay,
         'lr_decay_start': lr_decay_start,
+        'init_scale': init_scale,
         'tied': tied,
     }
     args = Namespace(**args_dict)

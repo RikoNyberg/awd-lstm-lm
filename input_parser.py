@@ -22,7 +22,7 @@ def parse_input():
     parser.add_argument('--dropoute', type=float, default=0, help='dropout to remove words from embedding layer (0 = no dropout)')
     parser.add_argument('--wdrop', type=float, default=0, help='amount of weight dropout to apply to the RNN hidden to hidden matrix')
     parser.add_argument('--seed', type=int, default=313, help='random seed')
-    parser.add_argument('--nonmono', type=int, default=313, help='random seed')
+    parser.add_argument('--nonmono', type=int, default=6, help='Which epoch to switch to ASGD') # TODO: Maybe just remove this?
     parser.add_argument('--cuda', action='store_true', help='use CUDA (by default not using cuda)')
     parser.add_argument('--log_interval', type=int, default=200, metavar='N', help='report interval')
     parser.add_argument('--save', type=str,  default=randomhash+'.pt', help='path to save the final model')
@@ -33,6 +33,7 @@ def parse_input():
     parser.add_argument('--optimizer', type=str,  default='sgd', help='optimizer to use (sgd, adam)')
     parser.add_argument('--lr_decay', type=float, default=0.8, help='Determines how fast the learning rate decays after epoch lr_decay_start (1 = no decay)')
     parser.add_argument('--lr_decay_start', type=int, default=8, help='After which epoch to start decaying the learning rate by lr_decay')
+    parser.add_argument('--init_scale', type=float, default=0.1, help='The weights of the model will be randomly initialized, with a uniform distribution and values between -init_scale and init_scale')
     args = parser.parse_args()
 
     args_dict = vars(args)
