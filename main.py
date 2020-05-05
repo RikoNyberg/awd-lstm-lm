@@ -116,7 +116,7 @@ class LanguageModelTrainer():
                 self.optimizer = torch.optim.Adam(self.params, lr=self.args.lr, weight_decay=self.args.wdecay)
             for epoch in range(1, self.args.epochs+1):
                 self.epoch_start_time = time.time()
-                self.train_batches()
+                self.train_batches(epoch)
 
                 val_loss = self.evaluate(self.val_data, self.eval_batch_size)
                 self.log_and_store_loss_and_ppl(epoch, val_loss, 'valid')
@@ -142,7 +142,7 @@ class LanguageModelTrainer():
             print('-' * 89)
             print('Exiting from training early')
 
-    def train_batches(self):
+    def train_batches(self, epoch):
         # Turn on training mode which enables dropout.
         if self.args.model == 'QRNN': self.model.reset()
         total_loss = 0
