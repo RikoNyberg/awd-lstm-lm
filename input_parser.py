@@ -34,6 +34,7 @@ def parse_input():
     parser.add_argument('--lr_decay', type=float, default=0.8, help='Determines how fast the learning rate decays after epoch lr_decay_start (1 = no decay)')
     parser.add_argument('--lr_decay_start', type=int, default=8, help='After which epoch to start decaying the learning rate by lr_decay')
     parser.add_argument('--init_scale', type=float, default=0.1, help='The weights of the model will be randomly initialized, with a uniform distribution and values between -init_scale and init_scale')
+    parser.add_argument('--tied', action='store_true', help='Tied')
     args = parser.parse_args()
 
     args_dict = vars(args)

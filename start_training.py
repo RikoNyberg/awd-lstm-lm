@@ -88,7 +88,6 @@ def run(
         'tied': tied,
     }
     args = Namespace(**args_dict)
-    args.tied = True
 
     lm_model_trainer = LanguageModelTrainer(args, ex)
     lm_model_trainer.load_training_data()
